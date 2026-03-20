@@ -3,26 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prenotazione Lezioni Palestra</title>
+    <title>Prenotazione Palestra | Gymflow</title>
     
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js'></script>
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; }
-        #calendar { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .instructions { text-align: center; margin-bottom: 20px; color: #333; }
+        /* --- STILI GENERALI --- */
+        :root {
+            --primary-color: #2c3e50; /* Grigio scuro principale */
+            --accent-color: #27ae60;  /* Verde palestra per azioni */
+            --bg-color: #f8f9fa;      /* Sfondo pagina chiaro */
+            --text-color: #333;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 10px; /* Padding ridotto per mobile */
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- INTESTAZIONE COMPATTA --- */
+        .header-container {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 900px;
+            background: rgb(255, 255, 255);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .header-container h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.4rem; /* Titolo più piccolo */
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .header-container p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* --- CONTENITORE CALENDARIO --- */
+        #calendar-container { 
+            width: 100%;
+            max-width: 900px; /* Larghezza massima su desktop */
+            background: white; 
+            padding: 15px; /* Padding ridotto per mobile */
+            border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+            box-sizing: border-box; /* Cruciale per il padding su mobile */
+        }
+
+        /* --- PERSONALIZZAZIONE FULLCALENDAR --- */
+        /* Toolbar (bottoni e titolo mese) */
+        .fc .fc-toolbar {
+            flex-wrap: wrap; /* Permette ai bottoni di andare a capo su schermi molto piccoli */
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 10px;
+        }
+
+        /* Pulsanti */
+        .fc .fc-button-primary {
+            background-color: transparent;
+            border-color: #ddd;
+            color: var(--primary-color);
+            text-transform: capitalize;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .fc .fc-button-primary:hover {
+            background-color: #eee;
+            border-color: #ccc;
+            color: var(--primary-color);
+        }
+
+        .fc .fc-button-primary:not(:disabled).fc-button-active, 
+        .fc .fc-button-primary:not(:disabled):active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Giorno odierno */
+        .fc .fc-day-today {
+            background-color: rgba(39, 174, 96, 0.1) !important; /* Verde chiarissimo */
+        }
+
+        /* Intestazione giorni settimana (lun, mar...) */
+        .fc .fc-col-header-cell-cushion {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #777;
+        }
+
+        /* Numeri dei giorni */
+        .fc .fc-daygrid-day-number {
+            font-size: 0.9rem;
+            padding: 4px;
+        }
+
+        /* Stile eventi (prenotazioni) */
+        .fc-event {
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div class="instructions">
-        <h2>Calendario Prenotazioni Palestra</h2>
-        <p>Clicca su un giorno per prenotare la tua lezione.</p>
+    <div class="header-container">
+        <h2>Prenota la tua Lezione</h2>
+        <p>Tocca un giorno per inserire la tua sessione.</p>
     </div>
 
-    <div id='calendar'></div>
+    <div id="calendar-container">
+        <div id='calendar'></div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -30,35 +148,46 @@
 
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                locale: 'it', // Imposta lingua italiana
+                locale: 'it', // Lingua italiana
                 selectable: true,
+                handleWindowResize: true, // Adatta al ridimensionamento
+                contentHeight: 'auto',     // Altezza automatica basata sul contenuto
+
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek'
                 },
                 
-                // Funzione per gestire il click e la prenotazione
+                // Gestione click per prenotazione
                 dateClick: function(info) {
-                    let tipoLezione = prompt("Inserisci il tipo di lezione (es. Pilates, CrossFit, Pesi):");
+                    let tipoLezione = prompt("Tipo di lezione (es. Pesi, Yoga, CrossFit) per il " + info.dateStr + ":");
                     
-                    if (tipoLezione) {
+                    if (tipoLezione && tipoLezione.trim() !== "") {
                         calendar.addEvent({
                             title: tipoLezione,
                             start: info.dateStr,
                             allDay: true,
-                            backgroundColor: '#2c3e50',
-                            borderColor: '#2c3e50'
+                            backgroundColor: '#27ae60', // Verde per le nuove prenotazioni
+                            borderColor: '#27ae60'
                         });
-                        alert("Lezione di " + tipoLezione + " prenotata per il " + info.dateStr);
+                        alert("Lezione di '" + tipoLezione + "' registrata!");
                     }
                 },
 
-                // Esempio di lezioni già caricate
+                // Esempio di prenotazioni esistenti
                 events: [
                     {
                         title: 'Allenamento Gambe',
-                        start: '2026-03-25'
+                        start: '2026-03-25',
+                        backgroundColor: '#2c3e50', // Colore scuro per eventi predefiniti
+                        borderColor: '#2c3e50'
+                    },
+                    {
+                        title: 'Cardio HIIT',
+                        start: '2026-03-06',
+                        backgroundColor: '#e74c3c', // Rosso per evidenziare un evento specifico (opzionale)
+                        borderColor: '#e74c3c'
                     }
                 ]
             });
